@@ -66,8 +66,8 @@ module.exports = {
       if (replyValue) {
         // TODO there is a better way to assign keys to the confessionInQueue
         confessionsChannel.messages.fetch(confessionInQueue.confessionRequestReplyMessageId)
-          .then(message => {
-            sentConfessionMessage = message.reply(confessionMessage);
+          .then(async message => {
+            sentConfessionMessage = await message.reply(confessionMessage);
 
             confessionInQueue = {
               confessionNumber,
