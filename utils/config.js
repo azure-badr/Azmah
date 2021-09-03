@@ -6,9 +6,26 @@ const ENCRYPTION_KEY = process.env.CONFESSION_ENCRYPTION_PASSWORD;
 const IV_LENGTH = 16;
 const CONFESSIONS_FILE_PATH = `${require("path").resolve(__dirname, "../confessions/")}`;
 
+const { tatsuApiKey, tatsuApiUrl } = require("../config.json");
+
 let confessionQueue = [];
 
 module.exports = {
+  
+  async hasSufficientPoints(guildId, userId) {
+    const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
+    const options = {
+      hostname: ""
+    }
+    const response = await fetch(`${tatsuApiUrl}${userPointsEndpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": `${tatsuApiKey}`
+      }
+    });
+
+    return await response.json();
+  },
 
   getConfessionQueue() {
     return confessionQueue

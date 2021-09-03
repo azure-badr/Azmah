@@ -1,5 +1,7 @@
 {
     "token": "",
+    "tatsuApiKey": "",
+    "tatsuApiUrl": "",
     "clientId": "",
     "pakcordGuildId": "",
     "confessionsApprovalChannelId": "",
