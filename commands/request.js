@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { Formatters } = require("discord.js");
-const { getConfessionByNumber, getConfessionByMessageId } = require("../utils/config");
+const { getConfessionByNumber, getConfessionByMessageId, decrypt } = require("../utils/config");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,11 +35,15 @@ module.exports = {
 
             interaction.reply({
                 content:
-                    Formatters.codeBlock("javascript", JSON.stringify(confession, null, 4))
+                    `Confessor ID: ${Formatters.inlineCode(decrypt(confession.confessorId))}\n
+Confessor name: ${Formatters.inlineCode(decrypt(confession.confessorName))}\n
+Confession message ID: ${Formatters.inlineCode(confession.confessionMessageId)}\n
+Confession message ID on ${Formatters.channelMention("418266761373417472")}: ${Formatters.inlineCode(confession.confessionPostedMessageId)}\n
+Please compare and verify the requested confession message ID in ${Formatters.channelMention("418266761373417472")} with the one listed above`
             });
             return;
         }
-        
+
         if (interaction.options.get("messageid")?.value) {
             const confession = getConfessionByMessageId(interaction.options.get("messageid").value);
             if (!confession) {
@@ -52,7 +56,11 @@ module.exports = {
 
             interaction.reply({
                 content:
-                    Formatters.codeBlock("javascript", JSON.stringify(confession, null, 4))
+                    `Confessor ID: ${Formatters.inlineCode(decrypt(confession.confessionRequestAuthorId))}\n
+Confessor name: ${Formatters.inlineCode(decrypt(confession.confessionRequestAuthorName))}\n
+Confession message ID: ${Formatters.inlineCode(confession.confessionMessageId)}\n
+Confession message ID on ${Formatters.channelMention("345588884996096000")}: ${Formatters.inlineCode(confession.confessionsApprovalMessageId)}\n
+Please compare and verify the requested confession message ID in ${Formatters.channelMention("345588884996096000")} with the one listed above`
             });
             return;
         }
