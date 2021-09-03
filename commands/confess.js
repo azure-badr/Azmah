@@ -4,7 +4,7 @@ const {
   pakcordGuildId,
   confessionsApprovalChannelId,
 } = require("../config.json");
-const { addConfessionRequest, pushToConfessionQueue, getConfessionByConfessionId, encrypt } = require("../utils/config");
+const { addConfessionRequest, pushToConfessionQueue, getConfessionByConfessionId, encrypt, hasSufficientPoints } = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageActionRow, MessageButton } = require("discord.js");
@@ -30,6 +30,15 @@ module.exports = {
 
   // Command functionality
   async execute(interaction) {
+
+    const pakcordGuild = interaction.client.guilds.cache.get(pakcordGuildId);
+    const userTatsumakiInfo = await hasSufficientPoints(pakcordGuild.id, interaction.user.id);
+
+    if (userTatsumakiInfo && userTatsumakiInfo.score <= 7500) {
+      interaction.reply({ content: "You must have a score of at least `7500` to send a confession!\nCheck your score in the server by typing t!rank" });
+      return;
+    }
+
     const replyValue = interaction.options.get("replyto")?.value;
     if (replyValue && !getConfessionByConfessionId(Number(replyValue))) {
       interaction.reply({ content: "This confession does not exist! 📭" });
@@ -37,7 +46,6 @@ module.exports = {
     }
 
     const confessionMessage = interaction.options.get("message").value;
-    const pakcordGuild = interaction.client.guilds.cache.get(pakcordGuildId);
     const confessionsApprovalChannel = pakcordGuild.channels.cache.get(confessionsApprovalChannelId);
     let confessionRequest = {};
 
