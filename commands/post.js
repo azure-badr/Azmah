@@ -55,8 +55,8 @@ module.exports = {
                             confessionNumber,
                             confessorName: interaction.user.username,
                             confessorId: interaction.user.id,
-                            sentConfessionMessageUrl: sentConfessionMessage.url,
-                            sentConfessionMessageId: sentConfessionMessage.id,
+                            confessionPostedMessageUrl: sentConfessionMessage.url,
+                            confessionPostedMessageId: sentConfessionMessage.id,
                             confessionMessageContent: interaction.options.get("message").value,
                             confessionReplyTo: replyValue
                         }
