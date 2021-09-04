@@ -18,7 +18,6 @@ function addConfessionAndUpdate(confessionInQueue, confessionNumber) {
   updateConfessionNumber(confessionNumber);
 }
 
-let confessionNumber = getConfessionNumber();
 
 const messageIds = new Map();
 
@@ -27,26 +26,27 @@ module.exports = {
   once: false,
   async execute(interaction) {
     if (!interaction.isButton()) return;
-
+    
     // If button was already pressed
     if (messageIds.get(interaction.message.id)) {
       interaction.reply({ content: "This confession has already been replied to", ephemeral: true });
       return;
     }
-
+    
     // If confession doesn't exist in the confession queue
     let confessionInQueue = getConfessionQueue().find(confession => confession.confessionsApprovalMessageId === interaction.message.id);
     if (!confessionInQueue) {
       interaction.reply({ content: "This confession is not in the queue anymore", ephemeral: true });
       return;
     }
-
+    
     messageIds.set(interaction.message.id, true);
-
+    
     const confessionApproved = interaction.component.customId === "approved";
     let replyValue = "confessionRequestReplyTo" in confessionInQueue ? confessionInQueue.confessionRequestReplyTo : undefined;
-
+    
     if (confessionApproved) {
+      let confessionNumber = getConfessionNumber();
       const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
       const confessionMessage = {
         content: `${interaction.message.content}`,
