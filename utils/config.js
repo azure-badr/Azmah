@@ -1,17 +1,42 @@
 const fs = require("fs");
 const crypto = require("crypto");
+const fetch = require("cross-fetch");
 
-const algorithm = "";
+const algorithm = "aes-256-ctr";
 const ENCRYPTION_KEY = process.env.CONFESSION_ENCRYPTION_PASSWORD;
 const IV_LENGTH = 16;
 const CONFESSIONS_FILE_PATH = `${require("path").resolve(__dirname, "../confessions/")}`;
 
 const { tatsuApiKey, tatsuApiUrl } = require("../config.json");
 
-let confessionQueue = [];
+let confessionQueue = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
+
+function pushToConfessionQueue(confessionRequestObject) {
+  const confessionQueue = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
+  confessionQueue.push(confessionRequestObject);
+  fs.writeFileSync(
+    `${CONFESSIONS_FILE_PATH}/confession_queue.json`,
+    JSON.stringify(confessionQueue, null, 4),
+    "utf-8");
+}
+
+function popFromConfessionQueue(confessionId) {
+  const newConfessionQueue = getConfessionQueue().filter(
+    queuedConfession =>
+      queuedConfession.confessionsApprovalMessageId !== confessionId
+  );
+  fs.writeFileSync(
+    `${CONFESSIONS_FILE_PATH}/confession_queue.json`,
+    JSON.stringify(newConfessionQueue, null, 4),
+    "utf-8");
+}
+
+function getConfessionQueue() {
+  return JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
+}
 
 module.exports = {
-  
+
   async hasSufficientPoints(guildId, userId) {
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
     const options = {
@@ -27,20 +52,24 @@ module.exports = {
     return await response.json();
   },
 
-  getConfessionQueue() {
-    return confessionQueue
+  async hasSufficientPoints(guildId, userId) {
+    const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
+    const options = {
+      hostname: ""
+    }
+    const response = await fetch(`${tatsuApiUrl}${userPointsEndpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": `${tatsuApiKey}`
+      }
+    });
+
+    return await response.json();
   },
 
-  pushToConfessionQueue(confessionRequestObject) {
-    confessionQueue.push(confessionRequestObject);
-  },
-
-  popFromConfessionQueue(confessionId) {
-    confessionQueue = confessionQueue.filter(
-      queuedConfession =>
-        queuedConfession.confessionsApprovalMessageId !== confessionId
-    );
-  },
+  getConfessionQueue,
+  pushToConfessionQueue,
+  popFromConfessionQueue,
 
   addConfessionRequest(confessionRequestObject) {
     const confessionApprovalsJSON = fs.readFileSync(`${CONFESSIONS_FILE_PATH}/requests.json`, "utf-8");
@@ -97,7 +126,7 @@ module.exports = {
   getConfessionByConfessionId(confessionNumber) {
     const confessions = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confessions.json`, "utf-8"));
     const foundConfession = confessions.find(confession => confession.confessionNumber === confessionNumber);
-    return  foundConfession ? {
+    return foundConfession ? {
       id: foundConfession.confessionPostedMessageId,
       url: foundConfession.confessionPostedMessageUrl,
     } : null
