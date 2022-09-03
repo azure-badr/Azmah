@@ -1,47 +1,21 @@
-const fs = require("fs");
+const Confession = require("../database/models/ConfessionModel")
+const MetadataConfession = require("../database/models/MetadetaModel")
+
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
+
 const crypto = require("crypto");
 const fetch = require("cross-fetch");
 
 const algorithm = "aes-256-ctr";
 const ENCRYPTION_KEY = process.env.CONFESSION_ENCRYPTION_PASSWORD;
 const IV_LENGTH = 16;
-const CONFESSIONS_FILE_PATH = `${require("path").resolve(__dirname, "../confessions/")}`;
 
-const { tatsuApiKey, tatsuApiUrl } = require("../config.json");
-
-let confessionQueue = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
-
-function pushToConfessionQueue(confessionRequestObject) {
-  const confessionQueue = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
-  confessionQueue.push(confessionRequestObject);
-  fs.writeFileSync(
-    `${CONFESSIONS_FILE_PATH}/confession_queue.json`,
-    JSON.stringify(confessionQueue, null, 4),
-    "utf-8");
-}
-
-function popFromConfessionQueue(confessionId) {
-  const newConfessionQueue = getConfessionQueue().filter(
-    queuedConfession =>
-      queuedConfession.confessionsApprovalMessageId !== confessionId
-  );
-  fs.writeFileSync(
-    `${CONFESSIONS_FILE_PATH}/confession_queue.json`,
-    JSON.stringify(newConfessionQueue, null, 4),
-    "utf-8");
-}
-
-function getConfessionQueue() {
-  return JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confession_queue.json`, "utf-8"));
-}
+const { tatsuApiKey, tatsuApiUrl, tatsuRequiredScore, confessionMetadetaId } = require("../config.js");
 
 module.exports = {
-
   async hasSufficientPoints(guildId, userId) {
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
-    const options = {
-      hostname: ""
-    }
+
     const response = await fetch(`${tatsuApiUrl}${userPointsEndpoint}`, {
       headers: {
         "Content-Type": "application/json",
@@ -49,89 +23,55 @@ module.exports = {
       }
     });
 
-    return await response.json();
+    return (await response.json()).score >= tatsuRequiredScore;
   },
-
-  async hasSufficientPoints(guildId, userId) {
-    const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
-    const options = {
-      hostname: ""
-    }
-    const response = await fetch(`${tatsuApiUrl}${userPointsEndpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "authorization": `${tatsuApiKey}`
-      }
-    });
-
-    return await response.json();
+  async addConfession(confession) {
+    await Confession.create(confession)
   },
-
-  getConfessionQueue,
-  pushToConfessionQueue,
-  popFromConfessionQueue,
-
-  addConfessionRequest(confessionRequestObject) {
-    const confessionApprovalsJSON = fs.readFileSync(`${CONFESSIONS_FILE_PATH}/requests.json`, "utf-8");
-
-    const confessionApprovals = JSON.parse(confessionApprovalsJSON);
-    confessionApprovals.push(confessionRequestObject);
-
-    fs.writeFileSync(`${CONFESSIONS_FILE_PATH}/requests.json`, JSON.stringify(confessionApprovals, null, 4), "utf-8");
-
-
+  async getConfession(filter) {
+    return (await Confession.findOne(filter))
   },
+  async rejectConfession(interaction) {
+    await interaction.update({
+      components:
+        [new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`rjtd-by-${interaction.user.username}`)
+            .setLabel(`Rejected by ${interaction.user.username}`)
+            .setStyle("Danger")
+            .setDisabled()
+        )]
+    })
 
-  addConfession(confessionObject) {
-    const confessionsJSON = fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confessions.json`, "utf-8");
-
-    const confessions = JSON.parse(confessionsJSON);
-    confessions.push(confessionObject);
-
-    fs.writeFileSync(`${CONFESSIONS_FILE_PATH}/confessions.json`, JSON.stringify(confessions, null, 4), "utf-8");
-    confessionQueue = confessionQueue.filter(confession => confession.confessionMessageId === confessionObject.confessionMessageId);
+    await Confession.findOneAndUpdate(
+      { approval_message_id: interaction.message.id },
+      { rejected_by: interaction.user.id }
+    )
   },
-
-  updateConfessionNumber(confessionNumber) {
-    fs.writeFile(
-      "number.json",
-      JSON.stringify({ confessionNumber }, null, 4),
-      (error) => {
-        if (error)
-          console.log(
-            `Error at config.js while updating confession number: ${error}`
-          );
-      }
-    );
+  async approveConfession(interaction, confession) {
+    await Confession.findOneAndUpdate(
+      { approval_message_id: interaction.message.id },
+      confession
+    )
   },
-
-  getConfessionNumber() {
-    return JSON.parse(fs.readFileSync("number.json"))["confessionNumber"];
+  async getConfessionIdByNumber(number) {
+    return (await Confession.findOne({ number })).approved_message_id
   },
-
-  getConfessionByNumber(number) {
-    const confessions = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confessions.json`, "utf-8"));
-    const confession = confessions.find(confession => confession.confessionNumber === number);
-
-    return confession;
+  async getConfessionNumber() {
+    return (await MetadataConfession.findById(confessionMetadetaId)).number
   },
-
-  getConfessionByMessageId(id) {
-    const confessionRequests = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/requests.json`, "utf-8"));
-    const confessionRequest = confessionRequests.find(confession => confession.confessionsApprovalMessageId === id);
-
-    return confessionRequest;
+  async incrementConfessionNumber() {
+    await MetadataConfession.findByIdAndUpdate(
+      confessionMetadetaId, { $inc: { number: 1 } }
+    )
   },
+  async doesReplyExist(reply) {
+    if (reply === null)
+      throw Error()
 
-  getConfessionByConfessionId(confessionNumber) {
-    const confessions = JSON.parse(fs.readFileSync(`${CONFESSIONS_FILE_PATH}/confessions.json`, "utf-8"));
-    const foundConfession = confessions.find(confession => confession.confessionNumber === confessionNumber);
-    return foundConfession ? {
-      id: foundConfession.confessionPostedMessageId,
-      url: foundConfession.confessionPostedMessageUrl,
-    } : null
+    const confession = await Confession.exists({ number: reply.value })
+    return confession !== null
   },
-
   encrypt(text) {
     let iv = crypto.randomBytes(IV_LENGTH);
     let cipher = crypto.createCipheriv(
@@ -143,7 +83,6 @@ module.exports = {
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     return iv.toString("hex") + ":" + encrypted.toString("hex");
   },
-
   decrypt(text) {
     let textParts = text.split(":");
     let iv = Buffer.from(textParts.shift(), "hex");

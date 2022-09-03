@@ -19,7 +19,8 @@
   "dependencies": {
     "@discordjs/rest": "^1.1.0",
     "cross-fetch": "^3.1.5",
-    "discord.js": "^14.3.0"
+    "discord.js": "^14.3.0",
+    "mongoose": "^6.5.4"
   },
   "devDependencies": {
     "dotenv": "^16.0.2"

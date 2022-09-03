@@ -1,23 +1,16 @@
 const {
-  approveEmoji,
-  rejectEmoji,
   confessionsChannelId,
-} = require("../config.json");
-const { MessageActionRow, MessageButton } = require("discord.js");
+} = require("../config");
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 const {
+  getConfession,
+  rejectConfession,
+  approveConfession,
+  incrementConfessionNumber,
   getConfessionNumber,
-  getConfessionQueue,
-  updateConfessionNumber,
-  addConfession,
-  popFromConfessionQueue,
+  getConfessionIdByNumber
 } = require("../utils/config.js");
-
-function addConfessionAndUpdate(confessionInQueue, confessionNumber) {
-  addConfession(confessionInQueue);
-  updateConfessionNumber(confessionNumber);
-}
-
 
 const messageIds = new Map();
 
@@ -33,99 +26,58 @@ module.exports = {
       return;
     }
 
-    // If confession doesn't exist in the confession queue
-    let confessionInQueue = getConfessionQueue().find(confession => confession.confessionsApprovalMessageId === interaction.message.id);
-    if (!confessionInQueue) {
-      interaction.reply({ content: "This confession is not in the queue anymore", ephemeral: true });
-      return;
-    }
-
     messageIds.set(interaction.message.id, true);
-
-    const confessionApproved = interaction.component.customId === "approved";
-    let replyValue = "confessionRequestReplyTo" in confessionInQueue ? confessionInQueue.confessionRequestReplyTo : undefined;
-
-    if (confessionApproved) {
-      let confessionNumber = getConfessionNumber();
-      const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
-      const confessionMessage = {
-        content: `${interaction.message.content}`,
-        components: [
-          new MessageActionRow().addComponents(
-            new MessageButton()
-              .setCustomId((confessionNumber++).toString())
-              .setLabel(`Confession ${confessionNumber}`)
-              .setStyle("SECONDARY")
-              .setDisabled()
-          ),
-        ],
-      }
-
-      // Check if the confession is a reply
-      let sentConfessionMessage;
-      if (replyValue) {
-        // TODO there is a better way to assign keys to the confessionInQueue
-        confessionsChannel.messages.fetch(confessionInQueue.confessionRequestReplyMessageId)
-          .then(async message => {
-            sentConfessionMessage = await message.reply(confessionMessage);
-
-            confessionInQueue = {
-              confessionNumber,
-              confessorId: confessionInQueue.confessionRequestAuthorId,
-              confessorName: confessionInQueue.confessionRequestAuthorName,
-              confessionMessageId: confessionInQueue.confessionMessageId,
-              confessionMessageContent: confessionInQueue.confessionRequestMessageContent,
-              confessionPostedMessageUrl: sentConfessionMessage.url,
-              confessionPostedMessageId: sentConfessionMessage.id,
-              confessionApprovedBy: interaction.user.username,
-              confessionReplyTo: replyValue
-            };
-
-            addConfessionAndUpdate(confessionInQueue, confessionNumber);
-          });
-      } else {
-        sentConfessionMessage = await confessionsChannel.send(confessionMessage);
-
-        confessionInQueue = {
-          confessionNumber,
-          confessorId: confessionInQueue.confessionRequestAuthorId,
-          confessorName: confessionInQueue.confessionRequestAuthorName,
-          confessionMessageId: confessionInQueue.confessionMessageId,
-          confessionMessageContent: confessionInQueue.confessionRequestMessageContent,
-          confessionPostedMessageUrl: sentConfessionMessage.url,
-          confessionPostedMessageId: sentConfessionMessage.id,
-          confessionApprovedBy: interaction.user.username,
-        };
-
-        addConfessionAndUpdate(confessionInQueue, confessionNumber);
-      }
+    if (interaction.component.customId === "rejected") {
+      return await rejectConfession(interaction)
     }
 
-    // Update button according to how it was attended
-    interaction.update({
+    await incrementConfessionNumber()
+    const number = await getConfessionNumber()
+
+    const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
+    const confessionMessageOptions = {
+      content: `${interaction.message.content}`,
       components: [
-        new MessageActionRow().addComponents(
-          new MessageButton()
-            .setCustomId(
-              confessionApproved
-                ? `approvedBy${interaction.user.id}`
-                : `rejectedBy${interaction.user.id}`
-            )
-            .setLabel(
-              `${confessionApproved
-                ? "Confession approved"
-                : "Confession rejected"
-              } by ${interaction.user.username}`
-            )
-            .setStyle(confessionApproved ? "SUCCESS" : "DANGER")
-            .setEmoji(confessionApproved ? approveEmoji : rejectEmoji)
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(number.toString())
+            .setLabel(`Confession ${number}`)
+            .setStyle("Secondary")
             .setDisabled()
         ),
       ],
-    });
+    }
 
-    // Remove the indication for the button already clicked and remove confession from confession queue
+    await interaction.update({
+      components:
+        [new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`acptd-by-${interaction.user.username}`)
+            .setLabel(`Accepted by ${interaction.user.username}`)
+            .setStyle("Success")
+            .setDisabled()
+        )]
+    })
+
+    const confession = await getConfession({ approval_message_id: interaction.message.id })
+    let messageToReplyTo = null;
+    if (confession.reply_to !== 0)
+      messageToReplyTo
+        = await confessionsChannel.messages.fetch(getConfessionIdByNumber(confession.reply_to))
+
+    const confessionMessage = await confessionsChannel.send({
+      ...confessionMessageOptions,
+      reply: {
+        messageReference: messageToReplyTo?.id
+      }
+    })
+    await approveConfession(interaction, {
+      number,
+      approved_message_id: confessionMessage.id,
+      approved_message_url: confessionMessage.url,
+      approved_by: interaction.user.id,
+      approved: true,
+    });
     messageIds.delete(interaction.message.id);
-    popFromConfessionQueue(interaction.message.id);
-  },
+  }
 };

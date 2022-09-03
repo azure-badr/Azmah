@@ -1,4 +1,6 @@
-const { token } = require("./config.json");
+const initializeDatabase = require("./database");
+const { token } = require("./config");
+
 const fs = require("fs");
 const {
   Client,
@@ -7,6 +9,7 @@ const {
 } = require("discord.js");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+initializeDatabase()
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".js"));

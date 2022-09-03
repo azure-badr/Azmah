@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { inlineCode, channelMention } = require("discord.js");
-const { getConfessionByNumber, getConfessionByMessageId, decrypt } = require("../utils/config");
+const { inlineCode } = require("discord.js");
+const { getConfession, decrypt } = require("../utils/config");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,8 +24,8 @@ module.exports = {
     }
 
     if (interaction.options.get("number")?.value) {
-      const confession = getConfessionByNumber(Number(interaction.options.get("number").value));
-      if (!confession) {
+      const confession = await getConfession({ number: Number(interaction.options.get("number").value) });
+      if (confession === null) {
         interaction.reply({
           content: "A confession with this number does not exist",
           ephemeral: true
@@ -35,18 +35,18 @@ module.exports = {
 
       interaction.reply({
         content:
-          `Confessor ID: ${inlineCode(decrypt(confession.confessorId))}\n
-Confessor name: ${inlineCode(decrypt(confession.confessorName))}\n
-Confession message ID: ${inlineCode(confession.confessionMessageId)}\n
-Confession message ID on ${channelMention("418266761373417472")}: ${inlineCode(confession.confessionPostedMessageId)}\n
-Please compare and verify the requested confession message ID in ${channelMention("418266761373417472")} with the one listed above`
+          `Confessor ID: ${inlineCode(decrypt(confession.confessor_id))}
+Confessor name: ${inlineCode(decrypt(confession.confessor_name))}
+Confession message ID: ${inlineCode(confession.message_id)}
+Confession message ID on #confessions: ${inlineCode(confession.approved_message_id)}
+Please compare and verify the requested confession message ID in #confessions with the one listed above`
       });
       return;
     }
 
     if (interaction.options.get("messageid")?.value) {
-      const confession = getConfessionByMessageId(interaction.options.get("messageid").value);
-      if (!confession) {
+      const confession = await getConfession({ approval_message_id: interaction.options.get("messageid").value });
+      if (confession === null) {
         interaction.reply({
           content: "A confession with this message ID does not exist",
           ephemeral: true
@@ -56,11 +56,11 @@ Please compare and verify the requested confession message ID in ${channelMentio
 
       interaction.reply({
         content:
-          `Confessor ID: ${inlineCode(decrypt(confession.confessionRequestAuthorId))}\n
-Confessor name: ${inlineCode(decrypt(confession.confessionRequestAuthorName))}\n
-Confession message ID: ${inlineCode(confession.confessionMessageId)}\n
-Confession message ID on ${channelMention("345588884996096000")}: ${inlineCode(confession.confessionsApprovalMessageId)}\n
-Please compare and verify the requested confession message ID in ${channelMention("345588884996096000")} with the one listed above`
+          `Confessor ID: ${inlineCode(decrypt(confession.confessor_id))}
+Confessor name: ${inlineCode(decrypt(confession.confessor_name))}
+Confession message ID: ${inlineCode(confession.message_id)}
+Confession message ID on #confessions-approval: ${inlineCode(confession.approval_message_id)}
+Please compare and verify the requested confession message ID in #confessions-approval with the one listed above`
       });
       return;
     }

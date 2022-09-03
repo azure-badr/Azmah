@@ -1,13 +1,15 @@
 const {
-  getConfessionNumber,
-  getConfessionByConfessionId,
+  getConfessionIdByNumber,
+  incrementConfessionNumber,
   addConfession,
-  updateConfessionNumber
+  encrypt,
+  getConfessionNumber
 } = require("../utils/config");
 const { confessionsChannelId } = require("../config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageActionRow, MessageButton } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("post")
@@ -27,64 +29,57 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const replyValue = interaction.options.get("replyto")?.value;
-    if (replyValue && !getConfessionByConfessionId(Number(replyValue))) {
-      interaction.reply({ content: "This confession does not exist! 📭" });
-      return;
-    }
+    let confession = {}
+    const reply = interaction.options.get("replyto")
+    try {
+      if (!(await doesReplyExist(reply)))
+        return interaction.reply({ content: "A confession with this number does not exist", ephemeral: true })
 
-    let confessionNumber = getConfessionNumber();
+      confession.reply_to = reply.value
+    } catch { }
+
+    await incrementConfessionNumber()
+    const number = await getConfessionNumber()
+
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
-    const confessionMessage = {
+    const confessionMessageOptions = {
       content: `${interaction.options.get("message").value}`,
       components: [
-        new MessageActionRow().addComponents(
-          new MessageButton()
-            .setCustomId((confessionNumber++).toString())
-            .setLabel(`Confession ${confessionNumber}`)
-            .setStyle("SECONDARY")
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId((number).toString())
+            .setLabel(`Confession ${number}`)
+            .setStyle("Secondary")
             .setDisabled()
         ),
       ],
     }
+    let confessionMessage
 
-    let sentConfessionMessage;
-    if (replyValue) {
-      let confessionRepliedToId = getConfessionByConfessionId(Number(replyValue)).id;
-      confessionsChannel.messages.fetch(confessionRepliedToId)
-        .then(async message => {
-          sentConfessionMessage = await message.reply(confessionMessage);
-          addConfession(
-            {
-              postedByModerator: true,
-              confessionNumber,
-              confessorName: interaction.user.username,
-              confessorId: interaction.user.id,
-              confessionPostedMessageUrl: sentConfessionMessage.url,
-              confessionPostedMessageId: sentConfessionMessage.id,
-              confessionMessageContent: interaction.options.get("message").value,
-              confessionReplyTo: replyValue
-            }
-          );
-          updateConfessionNumber(confessionNumber);
-        });
-      interaction.reply({ content: "Your confession has been posted" });
-      return;
-    }
+    // If reply exists
+    let messageToReplyTo = null;
+    if ("reply_to" in confession)
+      messageToReplyTo
+        = await confessionsChannel.messages.fetch(getConfessionIdByNumber(confession.reply_to))
 
-    sentConfessionMessage = await confessionsChannel.send(confessionMessage);
-    addConfession(
-      {
-        postedByModerator: true,
-        confessionNumber,
-        confessorName: interaction.user.username,
-        confessorId: interaction.user.id,
-        confessionPostedMessageUrl: sentConfessionMessage.url,
-        confessionPostedMessageId: sentConfessionMessage.id,
-        confessionMessageContent: interaction.options.get("message").value,
+    confessionMessage = await confessionsChannel.send({
+      ...confessionMessageOptions,
+      reply: {
+        messageReference: messageToReplyTo?.id
       }
-    );
-    updateConfessionNumber(confessionNumber);
-    interaction.reply({ content: "Your confession has been posted" });
+    })
+
+    await interaction.reply({ content: "Your confession has been posted 🌴" })
+    await addConfession({
+      number,
+      confessor_id: encrypt(interaction.user.id),
+      confessor_name: encrypt(interaction.user.username),
+      message_id: (await interaction.fetchReply()).id,
+      approved_message_id: confessionMessage.id,
+      approved_message_url: confessionMessage.url,
+      approved_by: interaction.user.id,
+      approved: true,
+      ...confession
+    })
   },
 }

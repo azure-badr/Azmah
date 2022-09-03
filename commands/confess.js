@@ -1,13 +1,12 @@
 const {
-  approveEmoji,
-  rejectEmoji,
+  tatsuRequiredScore,
   guildId,
   confessionsApprovalChannelId,
 } = require("../config");
-const { addConfessionRequest, pushToConfessionQueue, getConfessionByConfessionId, encrypt, hasSufficientPoints } = require("../utils/config");
+const { doesReplyExist, encrypt, hasSufficientPoints, addConfession } = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageActionRow, MessageButton } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 module.exports = {
   // Command building
@@ -30,71 +29,56 @@ module.exports = {
   // Command functionality
   async execute(interaction) {
     const guild = interaction.client.guilds.cache.get(guildId);
-    const userTatsumakiInfo = await hasSufficientPoints(guild.id, interaction.user.id);
 
-    if (userTatsumakiInfo && userTatsumakiInfo.score <= 7500) {
-      interaction.reply({ content: "You must have a score of at least `7500` to send a confession!\nCheck your score in the server by typing t!rank" });
+    if (!(await hasSufficientPoints(guild.id, interaction.user.id))) {
+      interaction.reply({
+        content:
+          `You must have a score of at least ${tatsuRequiredScore} to send a confession!`
+            `\nCheck your score in the server by typing t!rank`
+      });
       return;
     }
 
-    const replyValue = interaction.options.get("replyto")?.value;
-    if (replyValue && !getConfessionByConfessionId(Number(replyValue))) {
-      interaction.reply({ content: "This confession does not exist! 📭" });
-      return;
-    }
+    let confession = {}
+    const reply = interaction.options.get("replyto")
+    try {
+      if (!(await doesReplyExist(reply)))
+        return interaction.reply({ content: "A confession with this number does not exist 🌴", ephemeral: true })
 
-    const confessionMessage = interaction.options.get("message").value;
+      if (Number(reply.value) === 0)
+        return interaction.reply({ content: "What are you trying to do? 🤔" })
+
+      confession.reply_to = reply.value
+    } catch { }
+
+    const messageContent = interaction.options.get("message").value;
     const confessionsApprovalChannel = guild.channels.cache.get(confessionsApprovalChannelId);
-    let confessionRequest = {};
 
-    const row = new MessageActionRow()
+    const row = new ActionRowBuilder()
       .addComponents(
-        new MessageButton()
+        new ButtonBuilder()
           .setCustomId("approved")
           .setLabel("Approve")
-          .setStyle("SUCCESS")
-          .setEmoji(approveEmoji)
+          .setStyle("Primary")
       )
       .addComponents(
-        new MessageButton()
+        new ButtonBuilder()
           .setCustomId("rejected")
           .setLabel("Reject")
-          .setStyle("DANGER")
-          .setEmoji(rejectEmoji)
+          .setStyle("Danger")
       );
-
-    let repliedConfession;
-    if (replyValue) {
-      repliedConfession = getConfessionByConfessionId(Number(replyValue));
-      row.addComponents(
-        new MessageButton()
-          .setLabel(`Reply to ${replyValue}`)
-          .setStyle("LINK")
-          .setURL(repliedConfession.url)
-      );
-    }
 
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
-      content: `${confessionMessage}`,
+      content: `${messageContent}`,
       components: [row],
     });
     await interaction.reply("💌 Your confession has been sent for approval.");
-
-    interaction.fetchReply().then(async (message) => {
-      confessionRequest = {
-        ...(replyValue && {
-          confessionRequestReplyTo: replyValue,
-          confessionRequestReplyMessageId: repliedConfession.id,
-        }),
-        confessionRequestAuthorId: encrypt(interaction.user.id),
-        confessionRequestAuthorName: encrypt(interaction.user.username),
-        confessionMessageId: message.id,
-        confessionRequestMessageContent: encrypt(confessionMessage),
-        confessionsApprovalMessageId: confessionsApprovalMessage.id,
-      };
-
-      pushToConfessionQueue(confessionRequest);
-      addConfessionRequest(confessionRequest);
-    });
+    await addConfession({
+      confessor_id: encrypt(interaction.user.id),
+      confessor_name: encrypt(interaction.user.username),
+      message_id: (await interaction.fetchReply()).id,
+      approval_message_id: confessionsApprovalMessage.id,
+      ...confession
+    })
   },
 };
