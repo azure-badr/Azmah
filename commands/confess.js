@@ -1,16 +1,15 @@
 const {
   approveEmoji,
   rejectEmoji,
-  pakcordGuildId,
+  guildId,
   confessionsApprovalChannelId,
-} = require("../config.json");
+} = require("../config");
 const { addConfessionRequest, pushToConfessionQueue, getConfessionByConfessionId, encrypt, hasSufficientPoints } = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageActionRow, MessageButton } = require("discord.js");
 
 module.exports = {
-
   // Command building
   data: new SlashCommandBuilder()
     .setName("confess")
@@ -30,9 +29,8 @@ module.exports = {
 
   // Command functionality
   async execute(interaction) {
-
-    const pakcordGuild = interaction.client.guilds.cache.get(pakcordGuildId);
-    const userTatsumakiInfo = await hasSufficientPoints(pakcordGuild.id, interaction.user.id);
+    const guild = interaction.client.guilds.cache.get(guildId);
+    const userTatsumakiInfo = await hasSufficientPoints(guild.id, interaction.user.id);
 
     if (userTatsumakiInfo && userTatsumakiInfo.score <= 7500) {
       interaction.reply({ content: "You must have a score of at least `7500` to send a confession!\nCheck your score in the server by typing t!rank" });
@@ -46,7 +44,7 @@ module.exports = {
     }
 
     const confessionMessage = interaction.options.get("message").value;
-    const confessionsApprovalChannel = pakcordGuild.channels.cache.get(confessionsApprovalChannelId);
+    const confessionsApprovalChannel = guild.channels.cache.get(confessionsApprovalChannelId);
     let confessionRequest = {};
 
     const row = new MessageActionRow()
@@ -64,7 +62,7 @@ module.exports = {
           .setStyle("DANGER")
           .setEmoji(rejectEmoji)
       );
-    
+
     let repliedConfession;
     if (replyValue) {
       repliedConfession = getConfessionByConfessionId(Number(replyValue));

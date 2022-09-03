@@ -1,8 +1,24 @@
 {
+  "name": "confessions",
+  "version": "1.0.0",
+  "description": "Confessions bot for the Pakcord server",
+  "main": "azmah.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azure-badr/confessions.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/azure-badr/confessions/issues"
+  },
+  "homepage": "https://github.com/azure-badr/confessions#readme",
   "dependencies": {
-    "@discordjs/builders": "^0.6.0",
-    "@discordjs/rest": "^0.1.0-canary.0",
-    "cross-fetch": "^3.1.4",
-    "discord.js": "^13.1.0"
+    "@discordjs/rest": "^1.1.0",
+    "cross-fetch": "^3.1.5",
+    "discord.js": "^14.3.0"
   }
 }
