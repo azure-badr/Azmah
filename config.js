@@ -1,3 +1,6 @@
+const dotenv = require("dotenv")
+dotenv.config()
+
 module.exports = {
   "token": process.env.TOKEN,
   "tatsuApiKey": process.env.TATSU_API_KEY,
