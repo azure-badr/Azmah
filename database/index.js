@@ -1,6 +1,5 @@
 const mongoose = require("mongoose")
 const { mongoUri } = require("../config")
-const MetadetaModel = require("./models/MetadetaModel")
 
 const initializeDatabase = async () => {
   try {
@@ -10,7 +9,6 @@ const initializeDatabase = async () => {
         dbName: "confessions"
       }
     )
-    await MetadetaModel.create({ number: 30131 })
     console.log(`[+] MongoDB Connected: ${connection.connection.host}`)
 
   } catch (error) {
