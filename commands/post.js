@@ -60,7 +60,7 @@ module.exports = {
     let messageToReplyTo = null;
     if ("reply_to" in confession)
       messageToReplyTo
-        = await confessionsChannel.messages.fetch(getConfessionIdByNumber(confession.reply_to))
+        = await confessionsChannel.messages.fetch((await getConfessionIdByNumber(confession.reply_to)))
 
     confessionMessage = await confessionsChannel.send({
       ...confessionMessageOptions,
