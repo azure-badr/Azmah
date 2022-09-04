@@ -55,7 +55,7 @@ module.exports = {
     )
   },
   async getConfessionIdByNumber(number) {
-    return (await Confession.findOne({ number })).approved_message_id
+    return (await Confession.findOne({ number }).exec()).approved_message_id
   },
   async getConfessionNumber() {
     return (await MetadataConfession.findById(confessionMetadetaId)).number
