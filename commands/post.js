@@ -40,7 +40,7 @@ module.exports = {
       return interaction.reply({ content: "What are you trying to do? 🤔" })
 
       confession.reply_to = reply.value
-    } catch { return interaction.reply({ content: "Something went wrong with your reply number", ephemeral: true }) }
+    } catch { }) }
 
     await incrementConfessionNumber()
     const number = await getConfessionNumber()
