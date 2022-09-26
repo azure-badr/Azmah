@@ -3,7 +3,8 @@ const {
   incrementConfessionNumber,
   addConfession,
   encrypt,
-  getConfessionNumber
+  getConfessionNumber,
+  doesReplyExist
 } = require("../utils/config");
 const { confessionsChannelId } = require("../config");
 
@@ -34,9 +35,12 @@ module.exports = {
     try {
       if (!(await doesReplyExist(reply)))
         return interaction.reply({ content: "A confession with this number does not exist", ephemeral: true })
+      
+      if (Number(reply.value) === 0)
+      return interaction.reply({ content: "What are you trying to do? 🤔" })
 
       confession.reply_to = reply.value
-    } catch { }
+    } catch { return interaction.reply({ content: "Something went wrong with your reply number", ephemeral: true }) }
 
     await incrementConfessionNumber()
     const number = await getConfessionNumber()
