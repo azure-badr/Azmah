@@ -33,8 +33,26 @@ module.exports = {
   },
   async getRecentConfessions() {
     return (
-      await Confession.find({ approved: true }).sort({ createdAt: -1 }).limit(5)
+      await Confession.find({ approved: true }).sort({ number: -1 }).limit(2)
     )
+  },
+  async getAutocompleteChoices(channel, confessions) {
+    if (confessions === null || confessions.length === 0) return [];
+
+    return await Promise.all(
+      confessions.map(async (confession) => {
+        const message = await channel.messages.fetch(
+          confession.approved_message_id
+        );
+        return {
+          name:
+            message.content.length > 30
+              ? `${confession.number} - ${message.content.slice(0, 30) + "..."}`
+              : `${confession.number} - ${message.content}`,
+          value: confession.number.toString(),
+        };
+      })
+    );
   },
   async rejectConfession(interaction) {
     await interaction.update({
