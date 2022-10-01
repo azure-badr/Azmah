@@ -14,6 +14,7 @@ module.exports = {
   "confessionMetadetaId": process.env.CONFESSION_METADETA_ID,
   "approveEmoji": "881813025642909726",
   "rejectEmoji": "881813465835130880",
+  "messageReplyNumberLimit": process.env.CONFESSION_MESSAGE_REPLY_LIMIT || 30132,
   "permissions": [
     {
       "id": "883256631629082684",

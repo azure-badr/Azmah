@@ -6,7 +6,10 @@ const {
   getConfessionNumber,
   doesReplyExist
 } = require("../utils/config");
-const { confessionsChannelId } = require("../config");
+const { 
+  confessionsChannelId, 
+  messageReplyNumberLimit 
+} = require("../config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
@@ -36,8 +39,8 @@ module.exports = {
       if (!(await doesReplyExist(reply)))
         return interaction.reply({ content: "A confession with this number does not exist", ephemeral: true })
       
-      if (Number(reply.value) === 0)
-      return interaction.reply({ content: "What are you trying to do? 🤔" })
+      if (Number(reply.value) <= messageReplyNumberLimi)
+        return interaction.reply({ content: `You can only respond to confessions after ${messageReplyNumberLimit}` })
 
       confession.reply_to = reply.value
     } catch { }
