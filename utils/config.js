@@ -36,7 +36,7 @@ module.exports = {
   },
   async getRecentConfessions() {
     return (
-      await Confession.find({ approved: true }).sort({ number: -1 }).limit(2)
+      await Confession.find({ approved: true }).sort({ number: -1 }).limit(5)
     )
   },
   async getAutocompleteChoices(channel, confessions) {
