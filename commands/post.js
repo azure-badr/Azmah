@@ -40,10 +40,7 @@ module.exports = {
         return interaction.reply({ content: "A confession with this number does not exist", ephemeral: true })
       
       confession.reply_to = reply.value
-    } catch {
-      if (Number(reply.value) <= messageReplyNumberLimi)
-        return interaction.reply({ content: `You can only respond to confessions after ${messageReplyNumberLimit}` })
-    }
+    } catch { }
 
     await incrementConfessionNumber()
     const number = await getConfessionNumber()
