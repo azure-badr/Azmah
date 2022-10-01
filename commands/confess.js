@@ -2,6 +2,7 @@ const {
   tatsuRequiredScore,
   guildId,
   confessionsApprovalChannelId,
+  messageReplyNumberLimit
 } = require("../config");
 const { doesReplyExist, encrypt, hasSufficientPoints, addConfession } = require("../utils/config");
 
@@ -43,10 +44,10 @@ module.exports = {
       if (!(await doesReplyExist(reply)))
         return interaction.reply({ content: "A confession with this number does not exist 🌴", ephemeral: true })
 
-      if (Number(reply.value) === 0)
-        return interaction.reply({ content: "What are you trying to do? 🤔" })
+      if (Number(reply.value) <= messageReplyNumberLimit)
+        return interaction.reply({ content: `You can only respond to confessions after ${messageReplyNumberLimit}` })
 
-      confession.reply_to = reply.value
+      confession.reply_to = eply.value 
     } catch { }
 
     const messageContent = interaction.options.get("message").value;
