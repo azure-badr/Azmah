@@ -2,9 +2,19 @@ const {
   tatsuRequiredScore,
   guildId,
   confessionsApprovalChannelId,
-  messageReplyNumberLimit
+  confessionsChannelId,
+  messageReplyNumberLimit,
 } = require("../config");
-const { doesReplyExist, encrypt, hasSufficientPoints, addConfession } = require("../utils/config");
+const {
+  doesReplyExist,
+  encrypt,
+  hasSufficientPoints,
+  addConfession,
+  getRecentConfessions,
+  decrypt,
+  getConfession,
+  getAutocompleteChoices,
+} = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
@@ -29,32 +39,23 @@ module.exports = {
     ),
   // Autocomplete functionality
   autoComplete: async (interaction) => {
-    const focusedValue = interaction.options.getFocused();
+    const guild = await interaction.client.guilds.cache.get(guildId);
+    const channel = await guild.channels.cache.get(confessionsChannelId);
 
-    // Make query to database, get some query back
+    const focusedValue = interaction.options.getFocused();
     if (focusedValue === "") {
-      const choices = [
-        '10000 - Hello world', 
-        '10001 - Some confession', 
-        '10002 - Some long confession', 
-        '10003 - Some very long confession', 
-        '10004 - Some even longer confession'
-      ];
-      const filtered = choices.filter(choice => choice.startsWith(focusedValue));
-      return await interaction.respond(
-        filtered.map(choice => ({ name: choice, value: choice })),
-      );
+      const confessions = await getRecentConfessions();
+      const choices = await getAutocompleteChoices(channel, confessions);
+
+      return await interaction.respond(choices)
     }
 
-    return await interaction.respond(
-      [
-        { name: "30484 - Lorem ipsum dolor sit amet, consectetur adipiscing elit.  ", value: "30484" },
-        { name: "30483 - Suspendisse tempus augue consequat metus ultrices", value: "30483" },
-        { name: "30482 - Ac blandit nunc blandit.", value: "30482" },
-        { name: "30481 - Lorem ipsum dolor sit amet", value: "30481" },
-      ],
-    )
+    // @TODO: Add a way to search for confessions by number
+    // const confessions = await getConfessions({ number: Number(focusedValue) });
+    // const choices = await getAutocompleteChoices(channel, confessions);
 
+    // console.log(choices)
+    return await interaction.respond([]);
   },
   // Command functionality
   async execute(interaction) {
