@@ -25,6 +25,7 @@ module.exports = {
         .setName("replyto")
         .setDescription("Reply to a confession with their confession number")
         .setRequired(false)
+        .setAutocomplete(true)
     ),
   // Autocomplete functionality
   autoComplete: async (interaction) => {
