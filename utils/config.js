@@ -31,6 +31,11 @@ module.exports = {
   async getConfession(filter) {
     return (await Confession.findOne(filter))
   },
+  async getRecentConfessions() {
+    return (
+      await Confession.find({ approved: true }).sort({ createdAt: -1 }).limit(5)
+    )
+  },
   async rejectConfession(interaction) {
     await interaction.update({
       components:
