@@ -2,9 +2,18 @@ const {
   tatsuRequiredScore,
   guildId,
   confessionsApprovalChannelId,
-  messageReplyNumberLimit
+  confessionsChannelId,
+  messageReplyNumberLimit,
 } = require("../config");
-const { doesReplyExist, encrypt, hasSufficientPoints, addConfession } = require("../utils/config");
+const {
+  doesReplyExist,
+  encrypt,
+  hasSufficientPoints,
+  addConfession,
+  getRecentConfessions,
+  getConfessions,
+  getAutocompleteChoices,
+} = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
@@ -25,8 +34,26 @@ module.exports = {
         .setName("replyto")
         .setDescription("Reply to a confession with their confession number")
         .setRequired(false)
+        .setAutocomplete(true)
     ),
+  // Autocomplete functionality
+  autoComplete: async (interaction) => {
+    const guild = await interaction.client.guilds.cache.get(guildId);
+    const channel = await guild.channels.cache.get(confessionsChannelId);
 
+    const focusedValue = interaction.options.getFocused();
+    if (focusedValue === "") {
+      const confessions = await getRecentConfessions();
+      const choices = await getAutocompleteChoices(channel, confessions);
+
+      return await interaction.respond(choices)
+    }
+
+    const confessions = await getConfessions({ number: Number(focusedValue) });
+    const choices = await getAutocompleteChoices(channel, confessions);
+
+    return await interaction.respond(choices);
+  },
   // Command functionality
   async execute(interaction) {
     const guild = interaction.client.guilds.cache.get(guildId);
