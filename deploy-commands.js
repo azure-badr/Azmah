@@ -11,7 +11,9 @@ for (const file of commandfiles) {
   commands.push(command.data.toJSON());
 }
 
-const rest = new REST({ version: "10" }).setToken(token);
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
+console.log(clientId, guildId, token) // For validation
 
 rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands })
 	.then((data) => console.log(`Successfully registered ${data.length} application commands.`))
