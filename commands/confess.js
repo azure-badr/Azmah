@@ -26,7 +26,35 @@ module.exports = {
         .setDescription("Reply to a confession with their confession number")
         .setRequired(false)
     ),
+  // Autocomplete functionality
+  autoComplete: async (interaction) => {
+    const focusedValue = interaction.options.getFocused();
 
+    // Make query to database, get some query back
+    if (focusedValue === "") {
+      const choices = [
+        '10000 - Hello world', 
+        '10001 - Some confession', 
+        '10002 - Some long confession', 
+        '10003 - Some very long confession', 
+        '10004 - Some even longer confession'
+      ];
+      const filtered = choices.filter(choice => choice.startsWith(focusedValue));
+      return await interaction.respond(
+        filtered.map(choice => ({ name: choice, value: choice })),
+      );
+    }
+
+    return await interaction.respond(
+      [
+        { name: "30484 - Lorem ipsum dolor sit amet, consectetur adipiscing elit.  ", value: "30484" },
+        { name: "30483 - Suspendisse tempus augue consequat metus ultrices", value: "30483" },
+        { name: "30482 - Ac blandit nunc blandit.", value: "30482" },
+        { name: "30481 - Lorem ipsum dolor sit amet", value: "30481" },
+      ],
+    )
+
+  },
   // Command functionality
   async execute(interaction) {
     const guild = interaction.client.guilds.cache.get(guildId);
