@@ -31,6 +31,9 @@ module.exports = {
   async getConfession(filter) {
     return (await Confession.findOne(filter))
   },
+  async getConfessions(filter) {
+    return (await Confession.find(filter))
+  },
   async getRecentConfessions() {
     return (
       await Confession.find({ approved: true }).sort({ number: -1 }).limit(2)

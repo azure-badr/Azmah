@@ -11,8 +11,7 @@ const {
   hasSufficientPoints,
   addConfession,
   getRecentConfessions,
-  decrypt,
-  getConfession,
+  getConfessions,
   getAutocompleteChoices,
 } = require("../utils/config");
 
@@ -50,12 +49,10 @@ module.exports = {
       return await interaction.respond(choices)
     }
 
-    // @TODO: Add a way to search for confessions by number
-    // const confessions = await getConfessions({ number: Number(focusedValue) });
-    // const choices = await getAutocompleteChoices(channel, confessions);
+    const confessions = await getConfessions({ number: Number(focusedValue) });
+    const choices = await getAutocompleteChoices(channel, confessions);
 
-    // console.log(choices)
-    return await interaction.respond([]);
+    return await interaction.respond(choices);
   },
   // Command functionality
   async execute(interaction) {
