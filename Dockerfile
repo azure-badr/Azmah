@@ -6,6 +6,6 @@ RUN npm install
 
 COPY . .
 
-RUN node utils/deploy-commands.js
+RUN node deploy-commands.js
 
 CMD ["node", "azmah.js"]
