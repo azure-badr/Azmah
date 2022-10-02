@@ -151,7 +151,7 @@ module.exports = {
   },
   async approveConfession(interaction, confession) {
     await interaction.update({
-      components: confessionAttendButtonBuilder(true, interaction.user.username)
+      components: module.exports.confessionAttendButtonBuilder(true, interaction.user.username)
     })
 
     await Confession.findOneAndUpdate(
