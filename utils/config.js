@@ -158,6 +158,11 @@ module.exports = {
 
     return decrypted.toString();
   },
+  /**
+   * Builds a confession button for when a confession is posted 
+   * @param {String} number  The number of the new confession
+   * @return {ActionRowBuilder} The button with the new confession number
+   */
   confessionNumberButtonBuilder(number) {
     return [
       new ActionRowBuilder().addComponents(
