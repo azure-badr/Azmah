@@ -10,7 +10,7 @@ const algorithm = "aes-256-ctr";
 const ENCRYPTION_KEY = process.env.CONFESSION_ENCRYPTION_PASSWORD;
 const IV_LENGTH = 16;
 
-const { tatsuApiKey, tatsuApiUrl, tatsuRequiredScore, confessionMetadetaId } = require("../config.js");
+const { tatsuApiKey, tatsuApiUrl, tatsuRequiredScore, confessionsChannelId, confessionMetadetaId } = require("../config.js");
 
 module.exports = {
   async hasSufficientPoints(guildId, userId) {
