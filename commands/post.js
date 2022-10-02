@@ -4,6 +4,7 @@ const {
   addConfession,
   encrypt,
   getConfessionNumber,
+  confessionNumberButtonBuilder,
   doesReplyExist
 } = require("../utils/config");
 const { 
@@ -42,21 +43,12 @@ module.exports = {
       confession.reply_to = reply.value
     } catch { }
 
-    await incrementConfessionNumber()
-    const number = await getConfessionNumber()
+    const number = await incrementConfessionNumber()
 
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
       content: `${interaction.options.get("message").value}`,
-      components: [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId((number).toString())
-            .setLabel(`Confession ${number}`)
-            .setStyle("Secondary")
-            .setDisabled()
-        ),
-      ],
+      components: confessionNumberButtonBuilder(number),
     }
     let confessionMessage
 

@@ -25,6 +25,50 @@ module.exports = {
 
     return (await response.json()).score >= tatsuRequiredScore;
   },
+  /**
+   * Builds a confession button for when a confession is posted 
+   * @param {String} number  The number of the new confession
+   * @return {ActionRowBuilder} The button with the new confession number
+   */
+   confessionNumberButtonBuilder(number) {
+    return [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(number.toString())
+          .setLabel(`Confession ${number}`)
+          .setStyle("Secondary")
+          .setDisabled()
+      ),
+    ]
+  },
+  /**
+   * Builds a confession button for when a confession is attended 
+   * @param {Boolean} status  The status of the confession (approved/rejected)  
+   * @param {String} name  The name associated with person attending this confession 
+   * @return {ActionRowBuilder} The button indicating how the confession was attended
+   */
+  confessionAttendButtonBuilder(status, name) {
+    return [new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(
+          status ?
+            `acptd-by-${name}` :
+            `rjtd-by-${name}`
+          )
+        .setLabel(
+          status ?
+          `Accepted by ${name}` :
+          `Rejected by ${name}`
+          )
+        .setStyle(status ? "Success" : "Danger")
+        .setDisabled()
+    )]
+  },
+  async incrementConfessionNumber() {
+    return (await MetadataConfession.findByIdAndUpdate(
+      confessionMetadetaId, { $inc: { number: 1 } }, { new: true }
+    )).number
+  },
   async addConfession(confession) {
     await Confession.create(confession)
   },
@@ -59,14 +103,7 @@ module.exports = {
   },
   async rejectConfession(interaction) {
     await interaction.update({
-      components:
-        [new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`rjtd-by-${interaction.user.username}`)
-            .setLabel(`Rejected by ${interaction.user.username}`)
-            .setStyle("Danger")
-            .setDisabled()
-        )]
+      components: module.exports.confessionAttendButtonBuilder(false, interaction.user.username)
     })
 
     await Confession.findOneAndUpdate(
@@ -74,7 +111,49 @@ module.exports = {
       { rejected_by: interaction.user.id }
     )
   },
+  async postConfession(interaction) {
+    const number = await module.exports.incrementConfessionNumber()
+    // Build disabled button from that number
+
+    const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
+    const confessionMessageOptions = {
+      content: `${interaction.message.content}`,
+      components: module.exports.confessionNumberButtonBuilder(number),
+    }
+
+    // Get confession from database and send
+    const confession = await module.exports.getConfession({ approval_message_id: interaction.message.id })
+
+    // Check if the confession is a reply, if it is then attach a reply option
+    let messageToReplyTo = null;
+    if (confession.reply_to !== 0)
+      messageToReplyTo
+        = await confessionsChannel.messages.fetch(
+          (await module.exports.getConfessionIdByNumber(confession.reply_to))
+        )
+
+    // Send the confession
+    const confessionMessage = await confessionsChannel.send({
+      ...confessionMessageOptions,
+      reply: {
+        messageReference: messageToReplyTo?.id
+      }
+    })
+
+    // Set confession as approved in the database and update button in confessions-appproval
+    await module.exports.approveConfession(interaction, {
+      number,
+      approved_message_id: confessionMessage.id,
+      approved_message_url: confessionMessage.url,
+      approved_by: interaction.user.id,
+      approved: true,
+    });
+  },
   async approveConfession(interaction, confession) {
+    await interaction.update({
+      components: confessionAttendButtonBuilder(true, interaction.user.username)
+    })
+
     await Confession.findOneAndUpdate(
       { approval_message_id: interaction.message.id },
       confession
@@ -85,11 +164,6 @@ module.exports = {
   },
   async getConfessionNumber() {
     return (await MetadataConfession.findById(confessionMetadetaId)).number
-  },
-  async incrementConfessionNumber() {
-    await MetadataConfession.findByIdAndUpdate(
-      confessionMetadetaId, { $inc: { number: 1 } }
-    )
   },
   async doesReplyExist(reply) {
     if (reply === null)
