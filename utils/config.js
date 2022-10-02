@@ -1,7 +1,7 @@
 const Confession = require("../database/models/ConfessionModel")
 const MetadataConfession = require("../database/models/MetadetaModel")
 
-const { ActionRowBuilder, ButtonBuilder, CommandInteraction } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 const crypto = require("crypto");
 const fetch = require("cross-fetch");
@@ -59,7 +59,14 @@ module.exports = {
   },
   async rejectConfession(interaction) {
     await interaction.update({
-      components: this.confessionAttendButtonBuilder(false, interaction.user.username)
+      components:
+        [new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`rjtd-by-${interaction.user.username}`)
+            .setLabel(`Rejected by ${interaction.user.username}`)
+            .setStyle("Danger")
+            .setDisabled()
+        )]
     })
 
     await Confession.findOneAndUpdate(
@@ -67,49 +74,7 @@ module.exports = {
       { rejected_by: interaction.user.id }
     )
   },
-  async postConfession(interaction) {
-    const number = await this.incrementConfessionNumber()
-    // Build disabled button from that number
-
-    const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
-    const confessionMessageOptions = {
-      content: `${interaction.message.content}`,
-      components: this.confessionNumberButtonBuilder(number),
-    }
-
-    // Get confession from database and send
-    const confession = await getConfession({ approval_message_id: interaction.message.id })
-
-    // Check if the confession is a reply, if it is then attach a reply option
-    let messageToReplyTo = null;
-    if (confession.reply_to !== 0)
-      messageToReplyTo
-        = await confessionsChannel.messages.fetch(
-          (await getConfessionIdByNumber(confession.reply_to))
-        )
-
-    // Send the confession
-    const confessionMessage = await confessionsChannel.send({
-      ...confessionMessageOptions,
-      reply: {
-        messageReference: messageToReplyTo?.id
-      }
-    })
-
-    // Set confession as approved in the database and update button in confessions-appproval
-    await approveConfession(interaction, {
-      number,
-      approved_message_id: confessionMessage.id,
-      approved_message_url: confessionMessage.url,
-      approved_by: interaction.user.id,
-      approved: true,
-    });
-  },
   async approveConfession(interaction, confession) {
-    await interaction.update({
-      components: this.confessionAttendButtonBuilder(true, interaction.user.username)
-    })
-
     await Confession.findOneAndUpdate(
       { approval_message_id: interaction.message.id },
       confession
@@ -122,9 +87,9 @@ module.exports = {
     return (await MetadataConfession.findById(confessionMetadetaId)).number
   },
   async incrementConfessionNumber() {
-    return (await MetadataConfession.findByIdAndUpdate(
-      confessionMetadetaId, { $inc: { number: 1 } }, { new: true }
-    )).number
+    await MetadataConfession.findByIdAndUpdate(
+      confessionMetadetaId, { $inc: { number: 1 } }
+    )
   },
   async doesReplyExist(reply) {
     if (reply === null)
@@ -158,43 +123,4 @@ module.exports = {
 
     return decrypted.toString();
   },
-  /**
-   * Builds a confession button for when a confession is posted 
-   * @param {String} number  The number of the new confession
-   * @return {ActionRowBuilder} The button with the new confession number
-   */
-  confessionNumberButtonBuilder(number) {
-    return [
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(number.toString())
-          .setLabel(`Confession ${number}`)
-          .setStyle("Secondary")
-          .setDisabled()
-      ),
-    ]
-  },
-  /**
-   * Builds a confession button for when a confession is attended 
-   * @param {Boolean} status  The status of the confession (approved/rejected)  
-   * @param {String} name  The name associated with person attending this confession 
-   * @return {ActionRowBuilder} The button indicating how the confession was attended
-   */
-  confessionAttendButtonBuilder(status, name) {
-    return [new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(
-          status ?
-            `acptd-by-${name}` :
-            `rjtd-by-${name}`
-          )
-        .setLabel(
-          status ?
-          `Accepted by ${name}` :
-          `Rejected by ${name}`
-          )
-        .setStyle(status ? "Success" : "Danger")
-        .setDisabled()
-    )]
-  }
 };
