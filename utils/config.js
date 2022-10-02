@@ -1,7 +1,7 @@
 const Confession = require("../database/models/ConfessionModel")
 const MetadataConfession = require("../database/models/MetadetaModel")
 
-const { ActionRowBuilder, ButtonBuilder, CommandInteraction } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 const crypto = require("crypto");
 const fetch = require("cross-fetch");
@@ -24,6 +24,50 @@ module.exports = {
     });
 
     return (await response.json()).score >= tatsuRequiredScore;
+  },
+  /**
+   * Builds a confession button for when a confession is posted 
+   * @param {String} number  The number of the new confession
+   * @return {ActionRowBuilder} The button with the new confession number
+   */
+   confessionNumberButtonBuilder(number) {
+    return [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(number.toString())
+          .setLabel(`Confession ${number}`)
+          .setStyle("Secondary")
+          .setDisabled()
+      ),
+    ]
+  },
+  /**
+   * Builds a confession button for when a confession is attended 
+   * @param {Boolean} status  The status of the confession (approved/rejected)  
+   * @param {String} name  The name associated with person attending this confession 
+   * @return {ActionRowBuilder} The button indicating how the confession was attended
+   */
+  confessionAttendButtonBuilder(status, name) {
+    return [new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(
+          status ?
+            `acptd-by-${name}` :
+            `rjtd-by-${name}`
+          )
+        .setLabel(
+          status ?
+          `Accepted by ${name}` :
+          `Rejected by ${name}`
+          )
+        .setStyle(status ? "Success" : "Danger")
+        .setDisabled()
+    )]
+  },
+  async incrementConfessionNumber() {
+    return (await MetadataConfession.findByIdAndUpdate(
+      confessionMetadetaId, { $inc: { number: 1 } }, { new: true }
+    )).number
   },
   async addConfession(confession) {
     await Confession.create(confession)
@@ -59,7 +103,7 @@ module.exports = {
   },
   async rejectConfession(interaction) {
     await interaction.update({
-      components: confessionAttendButtonBuilder(false, interaction.user.username)
+      components: module.exports.confessionAttendButtonBuilder(false, interaction.user.username)
     })
 
     await Confession.findOneAndUpdate(
@@ -68,24 +112,24 @@ module.exports = {
     )
   },
   async postConfession(interaction) {
-    const number = await incrementConfessionNumber()
+    const number = await module.exports.incrementConfessionNumber()
     // Build disabled button from that number
 
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
       content: `${interaction.message.content}`,
-      components: confessionNumberButtonBuilder(number),
+      components: module.exports.confessionNumberButtonBuilder(number),
     }
 
     // Get confession from database and send
-    const confession = await getConfession({ approval_message_id: interaction.message.id })
+    const confession = await module.exports.getConfession({ approval_message_id: interaction.message.id })
 
     // Check if the confession is a reply, if it is then attach a reply option
     let messageToReplyTo = null;
     if (confession.reply_to !== 0)
       messageToReplyTo
         = await confessionsChannel.messages.fetch(
-          (await getConfessionIdByNumber(confession.reply_to))
+          (await module.exports.getConfessionIdByNumber(confession.reply_to))
         )
 
     // Send the confession
@@ -97,7 +141,7 @@ module.exports = {
     })
 
     // Set confession as approved in the database and update button in confessions-appproval
-    await approveConfession(interaction, {
+    await module.exports.approveConfession(interaction, {
       number,
       approved_message_id: confessionMessage.id,
       approved_message_url: confessionMessage.url,
@@ -120,11 +164,6 @@ module.exports = {
   },
   async getConfessionNumber() {
     return (await MetadataConfession.findById(confessionMetadetaId)).number
-  },
-  async incrementConfessionNumber() {
-    return (await MetadataConfession.findByIdAndUpdate(
-      confessionMetadetaId, { $inc: { number: 1 } }, { new: true }
-    )).number
   },
   async doesReplyExist(reply) {
     if (reply === null)
@@ -158,43 +197,4 @@ module.exports = {
 
     return decrypted.toString();
   },
-  /**
-   * Builds a confession button for when a confession is posted 
-   * @param {String} number  The number of the new confession
-   * @return {ActionRowBuilder} The button with the new confession number
-   */
-  confessionNumberButtonBuilder(number) {
-    return [
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(number.toString())
-          .setLabel(`Confession ${number}`)
-          .setStyle("Secondary")
-          .setDisabled()
-      ),
-    ]
-  },
-  /**
-   * Builds a confession button for when a confession is attended 
-   * @param {Boolean} status  The status of the confession (approved/rejected)  
-   * @param {String} name  The name associated with person attending this confession 
-   * @return {ActionRowBuilder} The button indicating how the confession was attended
-   */
-  confessionAttendButtonBuilder(status, name) {
-    return [new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(
-          status ?
-            `acptd-by-${name}` :
-            `rjtd-by-${name}`
-          )
-        .setLabel(
-          status ?
-          `Accepted by ${name}` :
-          `Rejected by ${name}`
-          )
-        .setStyle(status ? "Success" : "Danger")
-        .setDisabled()
-    )]
-  }
 };
