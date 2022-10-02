@@ -59,7 +59,7 @@ module.exports = {
   },
   async rejectConfession(interaction) {
     await interaction.update({
-      components: this.confessionAttendButtonBuilder(false, interaction.user.username)
+      components: confessionAttendButtonBuilder(false, interaction.user.username)
     })
 
     await Confession.findOneAndUpdate(
@@ -68,13 +68,13 @@ module.exports = {
     )
   },
   async postConfession(interaction) {
-    const number = await this.incrementConfessionNumber()
+    const number = await incrementConfessionNumber()
     // Build disabled button from that number
 
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
       content: `${interaction.message.content}`,
-      components: this.confessionNumberButtonBuilder(number),
+      components: confessionNumberButtonBuilder(number),
     }
 
     // Get confession from database and send
@@ -107,7 +107,7 @@ module.exports = {
   },
   async approveConfession(interaction, confession) {
     await interaction.update({
-      components: this.confessionAttendButtonBuilder(true, interaction.user.username)
+      components: confessionAttendButtonBuilder(true, interaction.user.username)
     })
 
     await Confession.findOneAndUpdate(
