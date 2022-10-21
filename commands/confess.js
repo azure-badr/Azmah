@@ -74,7 +74,7 @@ module.exports = {
       confession.reply_to = reply.value 
     } catch { }
 
-    let messageContent = interaction.options.get("message").value;
+    const messageContent = interaction.options.get("message").value;
     const confessionsApprovalChannel = guild.channels.cache.get(confessionsApprovalChannelId);
 
     const row = new ActionRowBuilder()
@@ -90,15 +90,15 @@ module.exports = {
           .setLabel("Reject")
           .setStyle("Danger")
       );
-    
-    if (interaction.inGuild())
-      messageContent += "\nYou're better off confessing in my DMs... (the way its intended) 🤫";
-    
+
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
       content: `${messageContent}`,
       components: [row],
     });
-    await interaction.reply("💌 Your confession has been sent for approval.");
+    await interaction.reply(
+      `💌 Your confession has been sent for approval. 
+      ${interaction.inGuild ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
+    );
     await addConfession({
       confessor_id: encrypt(interaction.user.id),
       confessor_name: encrypt(interaction.user.username),
