@@ -97,7 +97,7 @@ module.exports = {
     });
     await interaction.reply(
       `💌 Your confession has been sent for approval. 
-      ${interaction.inGuild ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
+      ${interaction.inGuild() ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
     );
     await addConfession({
       confessor_id: encrypt(interaction.user.id),
