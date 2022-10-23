@@ -35,6 +35,12 @@ module.exports = {
         .setDescription("Reply to a confession with their confession number")
         .setRequired(false)
         .setAutocomplete(true)
+    )
+    .addAttachmentOption((option) =>
+      option
+        .setName("image")
+        .setDescription("Image sent with the confession")
+        .setRequired(false)
     ),
   // Autocomplete functionality
   autoComplete: async (interaction) => {
@@ -59,17 +65,31 @@ module.exports = {
     const guild = interaction.client.guilds.cache.get(guildId);
 
     if (!(await hasSufficientPoints(guild.id, interaction.user.id))) {
-      interaction.reply({
+      interaction.followUp({
         content: `You must have a score of at least ${tatsuRequiredScore} to send a confession!\nCheck your score in the server by typing t!rank`
       });
       return;
+    }
+    
+    await interaction.deferReply();
+
+    // Check if confession has images and are all images
+    if (interaction.options.get("image")) {
+      const attachment = interaction.options.getAttachment("image");
+      if (!attachment.contentType.startsWith("image/")) {
+        interaction.followUp({
+          content: "Confessions can only have images as attachments",
+          ephemeral: true,
+        });
+        return;
+      }
     }
 
     let confession = {}
     const reply = interaction.options.get("replyto")
     try {
       if (!(await doesReplyExist(reply)))
-        return interaction.reply({ content: "A confession with this number does not exist 🌴", ephemeral: true })
+        return interaction.followUp({ content: "A confession with this number does not exist 🌴", ephemeral: true })
 
       confession.reply_to = reply.value 
     } catch { }
@@ -94,8 +114,13 @@ module.exports = {
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
       content: `${messageContent}`,
       components: [row],
+      ...(interaction.options.get("image") ?
+        {
+          files: [interaction.options.getAttachment("image")],
+        }
+        : null),
     });
-    await interaction.reply(
+    await interaction.followUp(
       `💌 Your confession has been sent for approval. 
       ${interaction.inGuild() ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
     );
