@@ -20,7 +20,6 @@ module.exports = {
   once: false,
   async execute(interaction) {
     if (!interaction.isButton()) return;
-
     // If button was already pressed
     if (messageIds.get(interaction.message.id)) {
       interaction.reply({ content: "This confession has already been replied to", ephemeral: true });
@@ -28,6 +27,8 @@ module.exports = {
     }
 
     messageIds.set(interaction.message.id, true);
+
+    await interaction.deferUpdate();
     if (interaction.component.customId === "rejected") {
       return await rejectConfession(interaction)
     }

@@ -102,7 +102,7 @@ module.exports = {
     );
   },
   async rejectConfession(interaction) {
-    await interaction.update({
+    await interaction.editReply({
       components: module.exports.confessionAttendButtonBuilder(false, interaction.user.username)
     })
 
@@ -118,6 +118,12 @@ module.exports = {
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
       content: `${interaction.message.content}`,
+      ...(interaction.message.attachments.size > 0 && {
+        files: interaction.message.attachments.map((attachment) => ({
+          name: attachment.name,
+          attachment: attachment.url,
+        })),
+      }),
       components: module.exports.confessionNumberButtonBuilder(number),
     }
 
@@ -150,7 +156,7 @@ module.exports = {
     });
   },
   async approveConfession(interaction, confession) {
-    await interaction.update({
+    await interaction.editReply({
       components: module.exports.confessionAttendButtonBuilder(true, interaction.user.username)
     })
 
