@@ -121,7 +121,7 @@ module.exports = {
         : null),
     });
     await interaction.followUp(
-      `💌 Your confession has been sent for approval. 
+      `💌 Your confession has been sent for approval.\n
       ${interaction.inGuild() ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
     );
     await addConfession({
