@@ -11,6 +11,7 @@ const {
   hasSufficientPoints,
   addConfession,
   getRecentConfessions,
+  getConfession,
   getConfessions,
   getAutocompleteChoices,
 } = require("../utils/config");
@@ -110,6 +111,23 @@ module.exports = {
           .setLabel("Reject")
           .setStyle("Danger")
       );
+    
+    try {
+      if (confession.reply_to) {
+        const message = await getConfession({ number: Number(confession.reply_to) });
+        const confessionsChannel = guild.channels.cache.get(confessionsChannelId);
+        const replyMessage = await confessionsChannel.messages.fetch(message.message_id);
+        
+        row.addComponents(
+          new ButtonBuilder()
+            .setLabel(`A reply to ${confession.reply_to}`)
+            .setStyle("Link")
+            .setURL(replyMessage.url)
+        )
+      }
+    } catch (error) {
+      console.log(error);
+    }
 
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
       content: `${messageContent}`,
