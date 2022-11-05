@@ -116,7 +116,7 @@ module.exports = {
       if (confession.reply_to) {
         const message = await getConfession({ number: Number(confession.reply_to) });
         const confessionsChannel = guild.channels.cache.get(confessionsChannelId);
-        const replyMessage = await confessionsChannel.messages.fetch(message.approval_message_id);
+        const replyMessage = await confessionsChannel.messages.fetch(message.approved_message_id);
         
         row.addComponents(
           new ButtonBuilder()
