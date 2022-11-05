@@ -13,7 +13,6 @@ const {
   getRecentConfessions,
   getConfessions,
   getAutocompleteChoices,
-  getConfession,
 } = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
@@ -111,20 +110,7 @@ module.exports = {
           .setLabel("Reject")
           .setStyle("Danger")
       );
-    
-    if (confession.reply_to) {
-      const message = await getConfession({ number: confession.reply_to });
-      const confessionsChannel = guild.channels.cache.get(confessionsChannelId);
-      const replyMessage = await confessionsChannel.messages.fetch(message.message_id);
-      
-      row.addComponents(
-        new ButtonBuilder()
-          .setLabel(`A reply to ${confession.reply_to}`)
-          .setStyle("Link")
-          .setURL(replyMessage.url)
-      )
-    }
-    
+
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
       content: `${messageContent}`,
       components: [row],
