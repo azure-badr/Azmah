@@ -66,7 +66,7 @@ module.exports = {
     const guild = interaction.client.guilds.cache.get(guildId);
 
     if (!(await hasSufficientPoints(guild.id, interaction.user.id))) {
-      interaction.followUp({
+      interaction.reply({
         content: `You must have a score of at least ${tatsuRequiredScore} to send a confession!\nCheck your score in the server by typing t!rank`
       });
       return;
