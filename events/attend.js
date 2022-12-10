@@ -1,17 +1,9 @@
 const {
-  confessionsChannelId,
-} = require("../config");
-const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
-
-const {
-  getConfession,
   rejectConfession,
-  approveConfession,
-  incrementConfessionNumber,
-  getConfessionNumber,
-  getConfessionIdByNumber
+  processConfessionQueue
 } = require("../utils/config.js");
-const { postConfession } = require("../utils/config");
+
+const queue = require("../confession-queue/queue");
 
 const messageIds = new Map();
 
@@ -25,16 +17,18 @@ module.exports = {
       interaction.reply({ content: "This confession has already been replied to", ephemeral: true });
       return;
     }
-
+    
     messageIds.set(interaction.message.id, true);
-
+    
     await interaction.deferUpdate();
     if (interaction.component.customId === "rejected") {
       return await rejectConfession(interaction)
     }
-
-    await postConfession(interaction)
     
-    messageIds.delete(interaction.message.id);
+    queue.push(interaction)
+    if (queue.length >= 1) {
+      await processConfessionQueue(interaction);
+      messageIds.delete(interaction.message.id);
+    }
   }
 };

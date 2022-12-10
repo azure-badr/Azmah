@@ -12,6 +12,8 @@ const IV_LENGTH = 16;
 
 const { tatsuApiKey, tatsuApiUrl, tatsuRequiredScore, confessionsChannelId, confessionMetadetaId } = require("../config.js");
 
+const queue = require("../confession-queue/queue");
+
 module.exports = {
   async hasSufficientPoints(guildId, userId) {
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
@@ -151,10 +153,10 @@ module.exports = {
       reply: {
         messageReference: messageToReplyTo?.id
       }
-    })
-
+    });
+    
     // Set confession as approved in the database and update button in confessions-appproval
-    await module.exports.approveConfession(interaction, {
+    return await module.exports.approveConfession(interaction, {
       number,
       approved_message_id: confessionMessage.id,
       approved_message_url: confessionMessage.url,
@@ -167,10 +169,20 @@ module.exports = {
       components: module.exports.confessionAttendButtonBuilder(true, interaction.user.username)
     })
 
-    await Confession.findOneAndUpdate(
+    return await Confession.findOneAndUpdate(
       { approval_message_id: interaction.message.id },
       confession
     )
+  },
+  async processConfessionQueue() {
+    const confession = queue.shift();
+    
+    if (!confession)
+      return;
+    
+    const postedConfession = await module.exports.postConfession(confession);
+    if (postedConfession)
+      await module.exports.processConfessionQueue();
   },
   async getConfessionIdByNumber(number) {
     return (await Confession.findOne({ number }).exec()).approved_message_id
