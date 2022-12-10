@@ -64,6 +64,13 @@ module.exports = {
         .setDisabled()
     )]
   },
+  /**
+   * Removes a confession from the database
+   * @param {String} id The id of the confession to remove
+   */
+  async removeConfession(messageId) {
+    return await Confession.findOneAndDelete({ approved_message_id: messageId })
+  },
   async incrementConfessionNumber() {
     return (await MetadataConfession.findByIdAndUpdate(
       confessionMetadetaId, { $inc: { number: 1 } }, { new: true }
