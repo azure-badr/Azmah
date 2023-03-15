@@ -14,6 +14,8 @@ const { tatsuApiKey, tatsuApiUrl, tatsuRequiredScore, confessionsChannelId, conf
 
 const queue = require("../confession-queue/queue");
 
+const recentConfessions = []
+
 module.exports = {
   async hasSufficientPoints(guildId, userId) {
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
@@ -154,6 +156,15 @@ module.exports = {
         messageReference: messageToReplyTo?.id
       }
     });
+
+    await module.exports.updateRecentConfessions({
+      number,
+      // If the message content length is greater than 30, then slice it to 30 and add ...
+      content:
+        confessionMessage.content.length > 30
+          ? `${confessionMessage.content.slice(0, 30) + "..."}`
+          : confessionMessage.content,
+    });
     
     // Set confession as approved in the database and update button in confessions-appproval
     return await module.exports.approveConfession(interaction, {
@@ -183,6 +194,13 @@ module.exports = {
     const postedConfession = await module.exports.postConfession(confession);
     if (postedConfession)
       await module.exports.processConfessionQueue();
+  },
+  recentConfessions: recentConfessions,
+  async updateRecentConfessions(confession) {
+    if (module.exports.recentConfessions.length === 5)
+      module.exports.recentConfessions.shift();
+
+    module.exports.recentConfessions.push(confession);
   },
   async getConfessionIdByNumber(number) {
     return (await Confession.findOne({ number }).exec()).approved_message_id
