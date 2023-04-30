@@ -71,7 +71,7 @@ module.exports = {
       });
       return;
     }
-    
+
     await interaction.deferReply();
 
     // Check if confession has images and are all images
@@ -92,7 +92,7 @@ module.exports = {
       if (!(await doesReplyExist(reply)))
         return interaction.followUp({ content: "A confession with this number does not exist 🌴", ephemeral: true })
 
-      confession.reply_to = reply.value 
+      confession.reply_to = reply.value
     } catch { }
 
     const messageContent = interaction.options.get("message").value;
@@ -111,13 +111,18 @@ module.exports = {
           .setLabel("Reject")
           .setStyle("Danger")
       );
-    
+
     try {
       if (confession.reply_to) {
         const message = await getConfession({ number: Number(confession.reply_to) });
         const confessionsChannel = guild.channels.cache.get(confessionsChannelId);
         const replyMessage = await confessionsChannel.messages.fetch(message.approved_message_id);
-        
+
+        if (!replyMessage) {
+          interaction.followUp({ content: "A confession with this number does not exist 🌴", ephemeral: true })
+          return;
+        }
+
         row.addComponents(
           new ButtonBuilder()
             .setLabel(`A reply to ${confession.reply_to}`)
