@@ -17,6 +17,7 @@ const queue = require("../confession-queue/queue");
 const recentConfessions = []
 
 module.exports = {
+  recentConfessions: recentConfessions,
   async hasSufficientPoints(guildId, userId) {
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
 
@@ -34,7 +35,7 @@ module.exports = {
    * @param {String} number  The number of the new confession
    * @return {ActionRowBuilder} The button with the new confession number
    */
-   confessionNumberButtonBuilder(number) {
+  confessionNumberButtonBuilder(number) {
     return [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -58,12 +59,12 @@ module.exports = {
           status ?
             `acptd-by-${name}` :
             `rjtd-by-${name}`
-          )
+        )
         .setLabel(
           status ?
-          `Accepted by ${name}` :
-          `Rejected by ${name}`
-          )
+            `Accepted by ${name}` :
+            `Rejected by ${name}`
+        )
         .setStyle(status ? "Success" : "Danger")
         .setDisabled()
     )]
@@ -89,28 +90,34 @@ module.exports = {
   async getConfessions(filter) {
     return (await Confession.find(filter))
   },
-  async getRecentConfessions() {
+  async getRecentConfessionsDB() {
     return (
       await Confession.find({ approved: true }).sort({ number: -1 }).limit(5)
     )
   },
-  async getAutocompleteChoices(channel, confessions) {
+  async getRecentConfessions() {
+    return module.exports.recentConfessions;
+  },
+  getAutocompleteChoices(channel, confessions) {
     if (confessions === null || confessions.length === 0) return [];
 
-    return await Promise.all(
-      confessions.map(async (confession) => {
-        const message = await channel.messages.fetch(
-          confession.approved_message_id
-        );
+    // If the channel is provided then fetch messages from the channel
+    if (channel) {
+      return confessions.map((confession) => {
+        const message = channel.messages.cache.get(confession.approval_message_id);
         return {
-          name:
-            message.content.length > 30
-              ? `${confession.number} - ${message.content.slice(0, 30) + "..."}`
-              : `${confession.number} - ${message.content}`,
+          name: formatConfessionText(message.content, confession.number),
           value: confession.number.toString(),
         };
-      })
-    );
+      });
+    }
+
+    return confessions.map((confession) => (
+      {
+        name: message.content,
+        value: confession.number,
+      }
+    ));
   },
   async rejectConfession(interaction) {
     await interaction.editReply({
@@ -165,7 +172,7 @@ module.exports = {
           ? `${confessionMessage.content.slice(0, 30) + "..."}`
           : confessionMessage.content,
     });
-    
+
     // Set confession as approved in the database and update button in confessions-appproval
     return await module.exports.approveConfession(interaction, {
       number,
@@ -187,15 +194,14 @@ module.exports = {
   },
   async processConfessionQueue() {
     const confession = queue.shift();
-    
+
     if (!confession)
       return;
-    
+
     const postedConfession = await module.exports.postConfession(confession);
     if (postedConfession)
       await module.exports.processConfessionQueue();
   },
-  recentConfessions: recentConfessions,
   async updateRecentConfessions(confession) {
     if (module.exports.recentConfessions.length === 5)
       module.exports.recentConfessions.shift();
@@ -240,4 +246,9 @@ module.exports = {
 
     return decrypted.toString();
   },
+  formatConfessionText(messageContent, confesionNumber) {
+    return messageContent.length > 30
+      ? `${confesionNumber} - ${messageContent.slice(0, 30) + '...'}`
+      : `${confesionNumber} - ${messageContent}`;
+  }
 };

@@ -14,6 +14,7 @@ const {
   getConfession,
   getConfessions,
   getAutocompleteChoices,
+  formatConfessionText,
 } = require("../utils/config");
 
 const { SlashCommandBuilder } = require("@discordjs/builders");
@@ -45,19 +46,23 @@ module.exports = {
     ),
   // Autocomplete functionality
   autoComplete: async (interaction) => {
-    const guild = await interaction.client.guilds.cache.get(guildId);
-    const channel = await guild.channels.cache.get(confessionsChannelId);
 
     const focusedValue = interaction.options.getFocused();
     if (focusedValue === "") {
       const confessions = await getRecentConfessions();
-      const choices = await getAutocompleteChoices(channel, confessions);
+      const choices = await getAutocompleteChoices(null, confessions);
 
       return await interaction.respond(choices)
     }
 
+    if (focusedValue > messageReplyNumberLimit)
+      return await interaction.respond([]);
+
+    const guild = await interaction.client.guilds.cache.get(guildId);
+    const channel = await guild.channels.cache.get(confessionsChannelId);
+
     const confessions = await getConfessions({ number: Number(focusedValue) });
-    const choices = await getAutocompleteChoices(channel, confessions);
+    const choices = getAutocompleteChoices(channel, confessions);
 
     return await interaction.respond(choices);
   },
