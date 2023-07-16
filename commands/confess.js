@@ -63,6 +63,12 @@ module.exports = {
   },
   // Command functionality
   async execute(interaction) {
+    if (interaction.inGuild()) {
+      return await interaction.reply({
+        content: "Confessions are meant to be sent in my DM 🤫",
+      });
+    }
+
     const guild = interaction.client.guilds.cache.get(guildId);
 
     if (!(await hasSufficientPoints(guild.id, interaction.user.id))) {
@@ -143,10 +149,7 @@ module.exports = {
         }
         : null),
     });
-    await interaction.followUp(
-      `💌 Your confession has been sent for approval. 
-      ${interaction.inGuild() ? 'You\'re better off confessing in my DMs... (the way its intended) 🤫' : ''}`
-    );
+    await interaction.followUp("💌 Your confession has been sent for approval.");
     await addConfession({
       confessor_id: encrypt(interaction.user.id),
       confessor_name: encrypt(interaction.user.username),
