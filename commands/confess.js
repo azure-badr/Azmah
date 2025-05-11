@@ -11,7 +11,7 @@ const {
 
 module.exports = {
   data: { name: "confess" },
-  async execute(message, content) {
+  async execute(message, ...content) {
     if (message.inGuild()) return;
 
     const guild = message.client.guilds.cache.get(guildId);
@@ -24,7 +24,7 @@ module.exports = {
 
     const confessionsApprovalChannel = guild.channels.cache.get(confessionsApprovalChannelId);
     const confessionsApprovalMessage = await confessionsApprovalChannel.send({
-      content: `${content}`,
+      content: content.join(' '),
       components: [buttons],
     });
 

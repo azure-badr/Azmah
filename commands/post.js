@@ -15,7 +15,6 @@ module.exports = {
   async execute(message, ...content) {
     if (!message.inGuild()) return;
 
-    console.log(`Got member: ${message.member.roles.cache}`)
     if (!message.member.roles.cache.hasAny(modRoleId)) return;
 
     let confession = {}
@@ -23,7 +22,7 @@ module.exports = {
 
     const confessionsChannel = message.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
-      content: content.join(" "),
+      content: content.join("   "),
       components: confessionNumberButtonBuilder(number),
     }
 
