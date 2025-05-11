@@ -6,9 +6,18 @@ const {
   Client,
   GatewayIntentBits,
   Collection,
+  Partials
 } = require("discord.js");
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+const client = new Client({ 
+  intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMessages, 
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages, 
+  ],
+  partials: [Partials.Channel, Partials.Message, Partials.User, Partials.GuildMember]
+});
 initializeDatabase()
 
 client.commands = new Collection();
@@ -28,26 +37,32 @@ for (const file of eventFiles) {
   }
 }
 
-client.on("interactionCreate", async (interaction) => {
-  const command = client.commands.get(interaction.commandName);
+client.on("messageCreate", async (message) => {
+  const prefix = ".";
+  if (!message.content.startsWith(prefix)) return;
+  console.log(`Message starts with a ${prefix}`)
+
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  console.log(`Received args: ${args}`)
+  const commandName = args.shift().toLowerCase();
+  console.log(`Command name is: ${commandName}`)
+
+  const command = client.commands.get(commandName);
   if (!command) return;
+  console.log(`Command exists: ${command.data.name}`)
 
-  if (interaction.isCommand()) {
-    try {
-      await command.execute(interaction);
-    } catch (error) {
-      console.error(error);
-      await interaction.reply({
-        content: "There was an error while executing this command!",
-        ephemeral: true,
-      });
+  try {
+    console.log("Attempting to execute command...")
+    await command.execute(message, ...args);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({
+      content: "There was an error while executing this command!",
+      ephemeral: true,
+    });
 
-      return;
-    }
+    return;
   }
-
-  if (interaction.isAutocomplete())
-    await command.autoComplete(interaction);
 });
 
 client.login(token);
