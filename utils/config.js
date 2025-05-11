@@ -143,8 +143,7 @@ module.exports = {
 
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
-      content: `${interaction.message.content}`,
-      components: module.exports.confessionNumberButtonBuilder(number),
+      content: `**Confession ${number}**\n` + `${interaction.message.content}`,
     }
 
     // Send the confession
