@@ -15,6 +15,7 @@ module.exports = {
   "approveEmoji": "881813025642909726",
   "rejectEmoji": "881813465835130880",
   "messageReplyNumberLimit": process.env.CONFESSION_MESSAGE_REPLY_LIMIT || 30132,
+  "modRoleId": process.env.MOD_ROLE_ID,
   "permissions": [
     {
       "id": "883256631629082684",
