@@ -10,6 +10,8 @@ const {
   modRoleId
 } = require("../config");
 
+MAX_MESSAGE_CONTENT_LIMIT = 1950
+
 module.exports = {
   data: { name: "post" },
   async execute(message, ...content) {
@@ -17,13 +19,17 @@ module.exports = {
 
     if (!message.member.roles.cache.hasAny(modRoleId)) return;
 
+    if (message.content.length > MAX_MESSAGE_CONTENT_LIMIT) {
+      await message.channel.send({ content: `Confession too long! Your message goes ${message.content.length - MAX_MESSAGE_CONTENT_LIMIT} characters above the limit.`})
+      return;
+    }
+
     let confession = {}
     const number = await incrementConfessionNumber()
 
     const confessionsChannel = message.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
-      content: content.join("   "),
-      components: confessionNumberButtonBuilder(number),
+      content: `**Confession ${number}**\n` + content.join(' '),
     }
 
     let confessionMessage
