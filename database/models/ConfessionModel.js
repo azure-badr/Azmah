@@ -51,13 +51,6 @@ const ConfessionSchema = mongoose.Schema(
       type: String,
       required: false,
     },
-    // This value is the confession number that the confession is replying to
-    // Default is 0 (meaning no reply)
-    reply_to: {
-      type: Number,
-      required: false,
-      default: 0,
-    }
   }
 )
 

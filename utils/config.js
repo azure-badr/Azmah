@@ -34,16 +34,31 @@ module.exports = {
    * @param {String} number  The number of the new confession
    * @return {ActionRowBuilder} The button with the new confession number
    */
-   confessionNumberButtonBuilder(number) {
+  confessionNumberButtonBuilder(number) {
     return [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(number.toString())
-          .setLabel(`Confession ${number}`)
+          .setLabel(`Confession #${number}`)
           .setStyle("Secondary")
           .setDisabled()
       ),
     ]
+  },
+  confessionApprovalButtonsBuilder() {
+    return new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId("approved")
+          .setLabel("Approve")
+          .setStyle("Primary")
+      )
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId("rejected")
+          .setLabel("Reject")
+          .setStyle("Danger")
+      );
   },
   /**
    * Builds a confession button for when a confession is attended 
@@ -129,32 +144,12 @@ module.exports = {
     const confessionsChannel = interaction.guild.channels.cache.get(confessionsChannelId);
     const confessionMessageOptions = {
       content: `${interaction.message.content}`,
-      ...(interaction.message.attachments.size > 0 && {
-        files: interaction.message.attachments.map((attachment) => ({
-          name: attachment.name,
-          attachment: attachment.url,
-        })),
-      }),
       components: module.exports.confessionNumberButtonBuilder(number),
     }
-
-    // Get confession from database and send
-    const confession = await module.exports.getConfession({ approval_message_id: interaction.message.id })
-
-    // Check if the confession is a reply, if it is then attach a reply option
-    let messageToReplyTo = null;
-    if (confession.reply_to !== 0)
-      messageToReplyTo
-        = await confessionsChannel.messages.fetch(
-          (await module.exports.getConfessionIdByNumber(confession.reply_to))
-        )
 
     // Send the confession
     const confessionMessage = await confessionsChannel.send({
       ...confessionMessageOptions,
-      reply: {
-        messageReference: messageToReplyTo?.id
-      }
     });
 
     await module.exports.updateRecentConfessions({
