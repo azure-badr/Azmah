@@ -17,6 +17,7 @@ module.exports = {
   "messageReplyNumberLimit": process.env.CONFESSION_MESSAGE_REPLY_LIMIT || 30132,
   "modRoleId": process.env.MOD_ROLE_ID,
   "ownerRoleId": process.env.OWNER_ROLE_ID,
+  "environment": process.env.ENVIRONMENT,
   "permissions": [
     {
       "id": "883256631629082684",
