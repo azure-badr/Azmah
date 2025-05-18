@@ -52,16 +52,16 @@ client.on("messageCreate", async (message) => {
   console.log(`Command exists: ${command.data.name}`)
 
   try {
-    console.log("Attempting to execute command...")
+    console.log(`${message.author.username} (${message.author.id}) executed command ${command.data.name}`);
     await command.execute(message, ...args);
   } catch (error) {
     console.error(error);
-    await interaction.reply({
-      content: "There was an error while executing this command!",
-      ephemeral: true,
-    });
-
-    return;
+    if (message.channel) {
+      await message.channel.send("Something went wrong executing this command.");
+      return;
+    }
+    
+    await message.author.dmChannel.send("Something weng wrong executing this command.")
   }
 });
 
