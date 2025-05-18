@@ -1,12 +1,12 @@
 const mongoose = require("mongoose")
-const { mongoUri } = require("../config")
+const { mongoUri, environment } = require("../config")
 
 const initializeDatabase = async () => {
   try {
     connection = await mongoose.connect(
       mongoUri,
       {
-        dbName: "confessions"
+        dbName: environment == "PRODUCTION" ? "confessions" : "confessions_dev"
       }
     )
     console.log(`[+] MongoDB Connected: ${connection.connection.host}`)
