@@ -1,12 +1,14 @@
 const {
   guildId,
   confessionsApprovalChannelId,
+  tatsuRequiredScore
 } = require("../config");
 
 const {
   encrypt,
   addConfession,
   confessionApprovalButtonsBuilder,
+  getUserTatsuScore
 } = require("../utils/config");
 
 MAX_MESSAGE_CONTENT_LIMIT = 1950
@@ -26,6 +28,14 @@ module.exports = {
     }
 
     const guild = message.client.guilds.cache.get(guildId);
+    const score = await getUserTatsuScore(guild.id, user.id) || 0;
+    if (score < tatsuRequiredScore) {
+      await user.dmChannel.send(
+        `You must have a server score of at least **${tatsuRequiredScore} points** to send a confession!\nYou currently have **${score} points**. Contact staff for more information.`
+      );
+      return;
+    }
+
     console.log(`Received guild ${guild}, ${user}`);
 
     const buttons = confessionApprovalButtonsBuilder();

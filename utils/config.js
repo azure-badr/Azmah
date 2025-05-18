@@ -17,7 +17,8 @@ const queue = require("../confession-queue/queue");
 const recentConfessions = []
 
 module.exports = {
-  async hasSufficientPoints(guildId, userId) {
+  async getUserTatsuScore(guildId, userId) {
+    console.log(`Getting points for guild ${guildId} user ${userId}`)
     const userPointsEndpoint = `guilds/${guildId}/rankings/members/${userId}/all`;
 
     const response = await fetch(`${tatsuApiUrl}${userPointsEndpoint}`, {
@@ -27,7 +28,10 @@ module.exports = {
       }
     });
 
-    return (await response.json()).score >= tatsuRequiredScore;
+    const data = await response.json();
+    const score = data.score;
+
+    return score;
   },
   /**
    * Builds a confession button for when a confession is posted 
