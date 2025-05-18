@@ -28,6 +28,13 @@ module.exports = {
     }
 
     const guild = message.client.guilds.cache.get(guildId);
+    const score = await getUserTatsuScore(guild.id, user.id) || 0;
+    if (score < tatsuRequiredScore) {
+      await user.dmChannel.send(
+        `You must have a server score of at least **${tatsuRequiredScore} points** to send a confession!\nYou currently have **${score} points**. Contact staff for more information.`
+      );
+      return;
+    }
 
     console.log(`Received guild ${guild}, ${user}`);
 
