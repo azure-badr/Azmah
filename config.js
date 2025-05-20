@@ -14,38 +14,7 @@ module.exports = {
   "confessionMetadetaId": process.env.CONFESSION_METADETA_ID,
   "approveEmoji": "881813025642909726",
   "rejectEmoji": "881813465835130880",
-  "messageReplyNumberLimit": process.env.CONFESSION_MESSAGE_REPLY_LIMIT || 30132,
   "modRoleId": process.env.MOD_ROLE_ID,
   "ownerRoleId": process.env.OWNER_ROLE_ID,
   "environment": process.env.ENVIRONMENT,
-  "permissions": [
-    {
-      "id": "883256631629082684",
-      "permissions": [{
-        "id": "268597891071868928",
-        "type": "ROLE",
-        "permission": true
-      }]
-    },
-    {
-      "id": "883255902378029086",
-      "permissions": [
-        {
-          "id": "268597891071868928",
-          "type": "ROLE",
-          "permission": true
-        },
-        {
-          "id": "629242275972775956",
-          "type": "ROLE",
-          "permission": true
-        },
-        {
-          "id": "409046980816273418",
-          "type": "ROLE",
-          "permission": true
-        }
-      ]
-    }
-  ]
 }
