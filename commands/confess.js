@@ -27,6 +27,13 @@ module.exports = {
       return;
     }
 
+    if (content.length == 0) {
+      await user.dmChannel.send(
+        "Your confession has no message inside it. If you are trying to send an image, send the link of the image instead"
+      );
+      return;
+    }
+
     const guild = message.client.guilds.cache.get(guildId);
     const score = await getUserTatsuScore(guild.id, user.id) || 0;
     if (score < tatsuRequiredScore) {
