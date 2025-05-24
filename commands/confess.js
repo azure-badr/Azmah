@@ -19,7 +19,6 @@ module.exports = {
     if (message.inGuild()) return;
 
     const user = message.author;
-    console.log("Message length: ", message.content.length)
     if (message.content.length > MAX_MESSAGE_CONTENT_LIMIT) {
       await user.dmChannel.send(
         `Your confession is too long! It goes ${message.content.length - MAX_MESSAGE_CONTENT_LIMIT} characters above the limit`
@@ -42,8 +41,6 @@ module.exports = {
       );
       return;
     }
-
-    console.log(`Received guild ${guild}, ${user}`);
 
     const buttons = confessionApprovalButtonsBuilder();
 

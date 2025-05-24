@@ -40,19 +40,14 @@ for (const file of eventFiles) {
 client.on("messageCreate", async (message) => {
   const prefix = ".";
   if (!message.content.startsWith(prefix)) return;
-  console.log(`Message starts with a ${prefix}`)
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
-  console.log(`Received args: ${args}`)
   const commandName = args.shift().toLowerCase();
-  console.log(`Command name is: ${commandName}`)
 
   const command = client.commands.get(commandName);
   if (!command) return;
-  console.log(`Command exists: ${command.data.name}`)
 
   try {
-    console.log(`${message.author.username} (${message.author.id}) executed command ${command.data.name}`);
     await command.execute(message, ...args);
   } catch (error) {
     console.error(error);
