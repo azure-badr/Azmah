@@ -18,34 +18,5 @@ module.exports = {
   "modRoleId": process.env.MOD_ROLE_ID,
   "ownerRoleId": process.env.OWNER_ROLE_ID,
   "environment": process.env.ENVIRONMENT,
-  "permissions": [
-    {
-      "id": "883256631629082684",
-      "permissions": [{
-        "id": "268597891071868928",
-        "type": "ROLE",
-        "permission": true
-      }]
-    },
-    {
-      "id": "883255902378029086",
-      "permissions": [
-        {
-          "id": "268597891071868928",
-          "type": "ROLE",
-          "permission": true
-        },
-        {
-          "id": "629242275972775956",
-          "type": "ROLE",
-          "permission": true
-        },
-        {
-          "id": "409046980816273418",
-          "type": "ROLE",
-          "permission": true
-        }
-      ]
-    }
-  ]
+  "botOwnerId": process.env.BOT_OWNER_ID,
 }

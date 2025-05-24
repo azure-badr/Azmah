@@ -1,5 +1,5 @@
 const initializeDatabase = require("./database");
-const { token } = require("./config");
+const { token, guildId, botOwnerId } = require("./config");
 
 const fs = require("fs");
 const {
@@ -56,7 +56,11 @@ client.on("messageCreate", async (message) => {
       return;
     }
     
-    await message.author.dmChannel.send("Something weng wrong executing this command.")
+    await message.author.dmChannel.send("Something weng wrong executing this command.");
+
+    const guild = client.guilds.cache.get(guildId);
+    const user = await guild.members.fetch(botOwnerId);
+    await user.dmChannel.send(error);
   }
 });
 
